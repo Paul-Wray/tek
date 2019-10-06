@@ -6,7 +6,7 @@
 #include "key_codes.h"
 
 #define MAX_ROLLOVER 6
-#define DOWN_COUNT 20
+#define DOWN_COUNT 40
 #define DEBOUNCE_COUNT DOWN_COUNT/2
 
 //-----layers.c-------
@@ -25,7 +25,7 @@ void sendKeyReport(BYTE *buf);
 
 BYTE __at (0x20) LED_STATUS;
 __bit __at (0x20) NumLock;
-__bit __at (0x21) Caps;
+__bit __at (0x21) CapsLock;
 __bit __at (0x22) ScrollLock;
 
 
@@ -77,10 +77,10 @@ void initKeyboard( void ) {
     KBCON = 0x00;
     KBMASK = 0x00;                               // Will Disable KP Interrupt
     
-    LED_STATUS = 0x00;                           // Default LED off
+    /*LED_STATUS = 0x00;                           // Default LED off
     ScrollLock = 0;
-    Caps = 0;
-    NumLock = 0;
+    CapsLock = 0;
+    NumLock = 0;*/
     TxBusy = CLR;                           // SET when pass key code to host
 
     downCount = 0;
@@ -95,17 +95,16 @@ void initKeyboard( void ) {
 
 
 void KB_LED_Off( void ) { 
-	NumLock_LED = SET;
-    Caps_LED = SET;
-    ScrollLock_LED = SET;
+	NumLock_LED = 1;
+    Caps_LED = 1;
+    ScrollLock_LED = 1;
 }
 
 
 void KB_LED_Status( void ) { 
-	NumLock_LED = 0;
-	NumLock_LED = ~NumLock;
-    Caps_LED = ~Caps;
-    ScrollLock_LED = ~ScrollLock;
+	NumLock_LED = NumLock ? 0 : 1;
+	Caps_LED = CapsLock ? 0 : 1;
+    ScrollLock_LED = ScrollLock ? 0 : 1;
 }
 
 void delayMicroSec(BYTE microSec) { 
