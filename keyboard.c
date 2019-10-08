@@ -6,7 +6,7 @@
 #include "key_codes.h"
 
 #define MAX_ROLLOVER 6
-#define DOWN_COUNT 40
+#define DOWN_COUNT 60
 #define DEBOUNCE_COUNT DOWN_COUNT/2
 
 //-----layers.c-------
