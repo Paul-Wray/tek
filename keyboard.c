@@ -1,6 +1,6 @@
 #include <string.h>                              // for memset();
 #include "global.h"
-#include "REG_MG84FL54.H"
+#include "reg_mg84fl54.h"
 #include "usb.h"
 #include "keyboard.h"
 #include "key_codes.h"
@@ -50,7 +50,7 @@ void clr(BYTE *buf, BYTE len) {
 
 	BYTE *cp;
 	for(cp = buf; cp < buf+len; cp++) {
-		*cp = 0;	
+		*cp = 0;
 	}
 }
 
@@ -59,24 +59,24 @@ void clr(BYTE *buf, BYTE len) {
 
 
 void prtHex(BYTE n) {
-	
+
 	CBYTE hexTab[] = {_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _A, _B, _C, _D, _E, _F};
 	BYTE hi = n >> 4;
 	BYTE lo = n & 0xf;
 	BYTE buf[8];
 	clr(buf, 8);
-	
+
 	buf[2] = hexTab[hi];
 	buf[3] = hexTab[lo];
 	sendKeyReport(buf);
 	sendKeyReport(buf);
 }
 
-void initKeyboard( void ) { 
+void initKeyboard( void ) {
 	KBPATN = 0xFF;
     KBCON = 0x00;
     KBMASK = 0x00;                               // Will Disable KP Interrupt
-    
+
     /*LED_STATUS = 0x00;                           // Default LED off
     ScrollLock = 0;
     CapsLock = 0;
@@ -94,21 +94,21 @@ void initKeyboard( void ) {
 }
 
 
-void KB_LED_Off( void ) { 
+void KB_LED_Off( void ) {
 	NumLock_LED = 1;
     Caps_LED = 1;
     ScrollLock_LED = 1;
 }
 
 
-void KB_LED_Status( void ) { 
+void KB_LED_Status( void ) {
 	NumLock_LED = NumLock ? 0 : 1;
 	Caps_LED = CapsLock ? 0 : 1;
     ScrollLock_LED = ScrollLock ? 0 : 1;
 }
 
-void delayMicroSec(BYTE microSec) { 
-	for (;microSec != 0; microSec--) { 
+void delayMicroSec(BYTE microSec) {
+	for (;microSec != 0; microSec--) {
        __asm
        nop
        __endasm;
@@ -116,8 +116,8 @@ void delayMicroSec(BYTE microSec) {
 }
 
 
-BYTE read_column( BYTE Scan_index ) { 
-	
+BYTE read_column( BYTE Scan_index ) {
+
 	BYTE scanValue;
   	__code BYTE KeyScan_Table[19][3] = {
         {0xFE,0xFF,0xFF},{0xFD,0xFF,0xFF},{0xFB,0xFF,0xFF},{0xF7,0xFF,0xFF},
@@ -130,67 +130,67 @@ BYTE read_column( BYTE Scan_index ) {
     P1 = KeyScan_Table[Scan_index][0];
     P2 = KeyScan_Table[Scan_index][1];
     P3 = P3&KeyScan_Table[Scan_index][2];
-    
+
     delayMicroSec( 10 );
-    
+
     scanValue = P0;                            // 1101,1111 -> 0 for Key " PRESS "
     scanValue = ~scanValue;                  // 0010,0000
 
     P1 = 0xFF;
     P2 = 0xFF;
     P3 = P3|0x18;
-    
+
     return scanValue;
 }
 
 
 void msg(BYTE m) {
-	
+
 	BYTE buf[8];
 	clr(buf, 8);
 	if(m >= 'a' && m <=	'z') {
-		buf[2] = m-'a'+_A;	
+		buf[2] = m-'a'+_A;
 	} else if(m >= 'A' && m <= 'Z') {
 		buf[2] = m-'A'+_A;
 		buf[0] = KEY_MOD_LSHIFT;
 	} else if(m >= '1' && m <= '9') {
 		buf[2] = m - '1' + _1;
 	} else if(m == ' ') {
-		buf[2] = _SPACE;	
+		buf[2] = _SPACE;
 	}
 
 	sendKeyReport(buf);
 	sendKeyReport(buf);
-	
+
 }
 
-void sendKeyReport(BYTE *buf) { 
-	
+void sendKeyReport(BYTE *buf) {
+
 	BYTE i;
 	if(Ep0.EmuOk == CLR)
         return;
-     
-	
+
+
 	//ToHost.Normal.reportId = 1;
 
 	EA = 0;
 	USB[EPINDEX] = EP1;
 	i = 0;
-	while(i < 8) { 
+	while(i < 8) {
 		USB[TXDAT] = buf[i];
 		i++;
 	}
 	TxBusy = SET;
 	USB[TXCNT] = i;
 	USB[EPINDEX] = EP0;
-	EA = 1; 	
+	EA = 1;
 	while(TxBusy)
 		{}
 
 	clr((BYTE *)buf, 8);
 }
 
-void sendKeys()  { 
+void sendKeys()  {
 	BYTE offset;
 	BYTE index;
 	BYTE hidCode;
@@ -199,7 +199,7 @@ void sendKeys()  {
 	static BYTE prevDownCount = 0;
 
 	static BYTE alternateKeyPending = 0;
-	
+
   	__code BYTE key_index[]= {
   	  	  0,  0, 40,  0,  0, 18, 19,  0,
   	  	  0,  0,  0,  0,  0,  0,  0,  0,
@@ -220,16 +220,16 @@ void sendKeys()  {
   	  	 72, 10, 85, 11, 30, 59, 45, 34,
   	  	  0, 12, 79, 13, 76,  0,  0,  0
      };
-      
+
 	CBYTE combineKeyAlternates[5] = {
-		0, _SPACE, _ENTER, _TAB, _BAKSPC	
+		0, _SPACE, _ENTER, _TAB, _BAKSPC
 	};
-	
+
 	//CBYTE *layers[] = {topLayer, numLayer, fnLayer};
     CBYTE *layer = topLayer;
 	KEY *kp;
 	BYTE HostIndex = 0;
-	
+
 	// a combination key (shift, alt, control, meta, or layer key) has been
 	// pressed and released alone, and there is an associated alternate key
 	if(alternateKeyPending && (downCount == 0)) {
@@ -241,13 +241,13 @@ void sendKeys()  {
 		sendKeyReport((BYTE *)&ToHost);
 		return;
 	}
-	
+
 	for(kp = activeKeys; kp < activeKeys + MAX_ROLLOVER; kp++) {
 		if(kp->state == DOWN) {
 			index = (kp->col << 3) + kp->row;
 			offset = key_index[index];
 			if(offset == 0) {
-				return;	
+				return;
 			}
 
 			offset = (--offset) << 1;
@@ -265,12 +265,12 @@ void sendKeys()  {
 					alternateKeyPending = combineKeyAlternates[mod & 0xf];
 					return;
 				} else {
-					alternateKeyPending = 0;	
+					alternateKeyPending = 0;
 				}
 			} else {
-				
+
 				if(mod & 0x0f) {
-					ToHost.Normal.Modifier = mod & 0x0f; 
+					ToHost.Normal.Modifier = mod & 0x0f;
 				}
 				ToHost.Normal.Code[HostIndex++] = hidCode;
 
@@ -279,17 +279,17 @@ void sendKeys()  {
 	}
 
 	prevDownCount = downCount;
-} 
+}
 
 
 /* Maintain a list of active keys (ie keys observed in the 1 state). To debounce,
 	maintain a counter for each key, beginning at DEBOUNCE_COUNT. Increment when
-	state is 1, decrement when 0. If count reaches DOWN_COUNT, key is deemed to 
-	be DOWN. When count reaches 0, key is removed from active keys. Note that 
+	state is 1, decrement when 0. If count reaches DOWN_COUNT, key is deemed to
+	be DOWN. When count reaches 0, key is removed from active keys. Note that
 	1->0 debouncing transition takes longer than 1->0, because DEBOUNCE_COUNT
 	is set to a fraction (eg half) of DOWN_COUNT. This allows us to accept a key
-	as DOWN as soon as we confirm noise is not the cause, while allowing a longer 
-	time for key debouncing for 1->0 
+	as DOWN as soon as we confirm noise is not the cause, while allowing a longer
+	time for key debouncing for 1->0
 */
 BYTE updateActiveKeys() {
 
@@ -297,13 +297,13 @@ BYTE updateActiveKeys() {
 	KEY *kp;
 	BYTE keyState;
 	BYTE keyChanges = 0;
-	
+
 	for(kp = activeKeys; kp < activeKeys + MAX_ROLLOVER; kp++) {
 
 		if (kp->state == FREE) {
-			continue;	
+			continue;
 		}
-		
+
 		keyState = allKeys[kp->col];
 		mask = 1 << kp->row;
 		if(mask & keyState) {
@@ -324,9 +324,9 @@ BYTE updateActiveKeys() {
 					keyChanges = 1;
 				}
 				kp->state = FREE;
-			} 
+			}
 		}
-		
+
 		// clear known keys to leave only new keys
 		allKeys[kp->col] &= ~mask;
 	}
@@ -342,12 +342,12 @@ void addActiveKey(BYTE col, BYTE keyState) {
 	BYTE row;
 	BYTE mask;
 	KEY *kp;
-	
-	// In theory could be >1 new key change per col 
+
+	// In theory could be >1 new key change per col
 	// Just add 1 per scan works too.
 
 	if(keyState == 0) {
-		return;	
+		return;
 	}
 	mask = 1;
 	for(row=0; row < 8; row++) {
@@ -356,7 +356,7 @@ void addActiveKey(BYTE col, BYTE keyState) {
 		}
 		mask <<= 1;
 	}
-	
+
 
 	// set up the new pending key
 	for(kp = activeKeys; kp < activeKeys + MAX_ROLLOVER; kp++) {
@@ -376,18 +376,18 @@ void addActiveKey(BYTE col, BYTE keyState) {
 */
 
 void scan(void) {
-	BYTE col;	
+	BYTE col;
 	WDTCR = Wdt;
 	if (Ep0.EmuOk == CLR)
       return;
-  	
+
 
   	// read all raw key values
 	for(col = 0; col < MAX_COLUMN; col++) {
 		allKeys[col] = read_column(col);
 	}
-	
-	// Debounce active keys and report changes to keys down. 
+
+	// Debounce active keys and report changes to keys down.
 	if(updateActiveKeys()) {
 		sendKeys();
 		sendKeyReport((BYTE *)&ToHost);
@@ -400,4 +400,3 @@ void scan(void) {
 	}
 
 }
-

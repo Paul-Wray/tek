@@ -1,4 +1,4 @@
-#include "REG_MG84FL54.H"
+#include "reg_mg84fl54.h"
 
 #define    SET         1
 #define    CLR         0
@@ -24,7 +24,7 @@ union WTYPE
   { BYTE B[2];
     WORD W;
   };
-  
+
 union DWTYPE
   { BYTE B[4];
     WORD W[2];
